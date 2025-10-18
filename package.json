@@ -1,0 +1,43 @@
+{
+  "name": "scheduling-assistant",
+  "version": "0.1.0",
+  "description": "",
+  "homepage": "https://github.com/recursive-reshy/scheduling-assistant#readme",
+  "bugs": {
+    "url": "https://github.com/recursive-reshy/scheduling-assistant/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/recursive-reshy/scheduling-assistant.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "dist/app.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc && node --env-file=.env dist/app.js",
+    "start": "node --env-file=.env dist/app.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.67.0",
+    "@sentry/node": "^10.20.0",
+    "@supabase/supabase-js": "^2.75.1",
+    "dayjs": "^1.11.18",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "googleapis": "^164.0.0",
+    "node-cache": "^5.1.2",
+    "node-cron": "^4.2.1",
+    "twilio": "^5.10.3",
+    "winston": "^3.18.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.8.1",
+    "@types/node-cron": "^3.0.11",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}
