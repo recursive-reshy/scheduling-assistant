@@ -19,7 +19,7 @@ interface Message {
 
 interface ConversationContext {
   currentIntent: string
-  partialBooking: {
+  partialBooking?: {
     scheduledTime: string
     teacherId: string
   }
@@ -38,15 +38,15 @@ export enum ConversationType {
 }
 
 export interface Conversation {
-  id: string
+  id?: string
   userPhone: string
   conversationType: ConversationType
   messageHistory: Message[]
   context: ConversationContext
   lessonId?: string
   status: ConversationStatus
-  createdAt: string
-  updatedAt: string
+  createdAt?: string
+  updatedAt?: string
 }
 
 // TODO: Add logging
