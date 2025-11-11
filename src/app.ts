@@ -1,10 +1,15 @@
 import express from 'express'
 import { testDatabaseConnection } from './config/database.js'
+// Routes
+import routes from './routes/index.js'
+
 const app = express()
 
 // Middleware
 app.use( express.json() )
 app.use( express.urlencoded( { extended: true } ) )
+
+app.use( '/api', routes )
 
 // Routes
 app.get( '/health', async ( _, res ) => {
