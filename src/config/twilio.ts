@@ -1,10 +1,10 @@
-import { Twilio } from 'twilio'
+import twilio from 'twilio'
 
-const twilio = new Twilio( process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN! )
+const client = twilio( process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN! )
 
 export const sendWhatsappMessage = async ( to: string, message: string ) => {
   try {
-    await twilio.messages.create({
+    await client.messages.create({
       from: process.env.TWILIO_PHONE_NUMBER!,
       to,
       body: message
@@ -16,4 +16,4 @@ export const sendWhatsappMessage = async ( to: string, message: string ) => {
   }
 }
 
-export default twilio
+export default client
