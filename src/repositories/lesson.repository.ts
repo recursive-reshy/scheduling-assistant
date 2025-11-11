@@ -1,6 +1,6 @@
 import dayjs from 'dayjs'
 import supabase from '../config/database.js'
-import BaseRepository from './base.js'
+import BaseRepository from './base.repository.js'
 
 export enum LessonStatus {
   PENDING = 'pending',
