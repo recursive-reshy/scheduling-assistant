@@ -140,4 +140,4 @@ class ConversationRepository extends BaseRepository< Conversation > {
   }
 }
 
-export default ConversationRepository
+export default new ConversationRepository()

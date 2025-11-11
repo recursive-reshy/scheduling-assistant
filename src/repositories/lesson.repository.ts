@@ -103,4 +103,4 @@ class LessonRepository extends BaseRepository< Lesson > {
   }
 }
 
-export default LessonRepository
+export default new LessonRepository()
