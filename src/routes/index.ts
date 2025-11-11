@@ -4,6 +4,6 @@ import webhook from './webhook.routes.js'
 
 const router = Router()
 
-router.use( '/whatsapp', webhook )
+router.use( '/webhook', webhook )
 
 export default router
