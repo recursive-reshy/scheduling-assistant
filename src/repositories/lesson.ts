@@ -21,7 +21,8 @@ export interface Lesson {
   updatedAt: string
 }
 
-export class LessonRepository extends BaseRepository< Lesson > {
+// TODO: Add logging
+class LessonRepository extends BaseRepository< Lesson > {
   constructor() {
     super( 'lessons' )
   }
