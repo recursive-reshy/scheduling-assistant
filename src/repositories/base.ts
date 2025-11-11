@@ -2,8 +2,9 @@ import supabase from '../config/database.js'
 
 
 // TODO: Add logging
-export class BaseRepository< T > {
-  private tableName: string
+class BaseRepository< T > {
+  // Protected so it can be overridden by child classes
+  protected tableName: string
 
   constructor( tableName: string ) {
     this.tableName = tableName
@@ -66,3 +67,5 @@ export class BaseRepository< T > {
     if ( error ) throw error
   }
 }
+
+export default BaseRepository
