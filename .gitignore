@@ -157,3 +157,6 @@ temp/
 # Optional: Backup files
 # *.bak
 # *.backup
+
+# Supabase files
+supabase/
