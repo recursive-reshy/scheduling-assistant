@@ -6,28 +6,28 @@ type Role = 'user' | 'assistant' | 'system'
 
 type ConversationStatus = 'active' | 'completed' | 'abandoned'
 
-interface Message {
+interface ConversationContext {
+  current_intent: string
+  partial_booking?: {
+    scheduled_time: string
+    teacher_id: string
+  }
+  negotiation_turn?: number
+  lesson_id?: string
+  conflicts?: any[]
+  suggested_alternatives?: any[]
+  [key: string]: any
+}
+
+export interface Message {
   role: Role
   content: string
   timestamp: string
   message_sid?: string
   claude_usage?: {
-    inputTokens: number
-    outputTokens: number
+    input_tokens: number
+    output_tokens: number
   }
-}
-
-interface ConversationContext {
-  currentIntent: string
-  partialBooking?: {
-    scheduledTime: string
-    teacherId: string
-  }
-  negotiationTurn?: number
-  lessonId?: string
-  conflicts?: any[]
-  suggestedAlternatives?: any[]
-  [key: string]: any
 }
 
 export enum ConversationType {
@@ -39,14 +39,14 @@ export enum ConversationType {
 
 export interface Conversation {
   id?: string
-  userPhone: string
-  conversationType: ConversationType
-  messageHistory: Message[]
+  user_phone: string
+  conversation_type: ConversationType
+  message_history: Message[]
   context: ConversationContext
-  lessonId?: string
+  lesson_id?: string
   status: ConversationStatus
-  createdAt?: string
-  updatedAt?: string
+  created_at?: string
+  updated_at?: string
 }
 
 // TODO: Add logging
@@ -80,7 +80,7 @@ class ConversationRepository extends BaseRepository< Conversation > {
 
     const updatedConversation = {
       ...conversation,
-      messageHistory: [ ...conversation.messageHistory, message ]
+      message_history: [ ...conversation.message_history, message ]
     }
 
     return this.update( conversationId, updatedConversation )
@@ -108,7 +108,7 @@ class ConversationRepository extends BaseRepository< Conversation > {
   }
 
   async linkToLesson( conversationId: string, lessonId: string ): Promise< Conversation > {
-    return this.update( conversationId, { lessonId } as Conversation )
+    return this.update( conversationId, { lesson_id: lessonId } as Conversation )
   }
 
   async findByLessonId( lessonId: string ): Promise< Conversation | null > {
