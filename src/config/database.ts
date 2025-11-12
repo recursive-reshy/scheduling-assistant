@@ -8,6 +8,7 @@ const supabase = createClient( supabaseUrl, supabaseAnonKey )
 
 export default supabase
 
+// TODO: Find a better way to test database connection
 export const testDatabaseConnection = async () => {
   try {
     const { data, error } = await supabase.from( 'test' ).select( '*' )
