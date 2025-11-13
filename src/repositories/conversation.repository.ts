@@ -2,11 +2,11 @@ import dayjs from 'dayjs'
 import supabase from '../config/database.js'
 import BaseRepository from './base.repository.js'
 
-type Role = 'user' | 'assistant' | 'system'
+export type Role = 'user' | 'assistant' | 'system'
 
-type ConversationStatus = 'active' | 'completed' | 'abandoned'
+export type ConversationStatus = 'active' | 'completed' | 'abandoned'
 
-interface ConversationContext {
+export interface ConversationContext {
   current_intent: string
   partial_booking?: {
     scheduled_time: string
