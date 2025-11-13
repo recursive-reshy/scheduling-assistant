@@ -5,9 +5,9 @@ import { callClaude } from '../config/claude.js'
 import { ConversationContext, Message } from '../repositories/conversation.repository.js'
 import { MessageParam } from '@anthropic-ai/sdk/resources'
 
-type Intent = 'booking' | 'cancellation' | 'query' | 'general'
-
 type Confidence = 'high' | 'medium' | 'low'
+
+export type Intent = 'booking' | 'cancellation' | 'query' | 'general'
 
 export interface ParsedIntent {
   intent: Intent
@@ -18,6 +18,10 @@ export interface ParsedIntent {
   }
   conversationalReply: string
   confidence: Confidence
+  usage: {
+    input_tokens: number
+    output_tokens: number
+  }
 }
 
 class ClaudeService {
@@ -145,7 +149,7 @@ class ClaudeService {
     return messages
   }
 
-  private parseClaudeResponse( response: string ): ParsedIntent {
+  private parseClaudeResponse( response: string, usage: { input_tokens: number, output_tokens: number } ): ParsedIntent {
 
     // Split response into conversational part and intent block
     const parts = response.split( '---INTENT---' )
@@ -155,7 +159,11 @@ class ClaudeService {
         intent: 'general',
         entities: {},
         conversationalReply: response,
-        confidence: 'low'
+        confidence: 'low',
+        usage: {
+          input_tokens: 0,
+          output_tokens: 0
+        }
       }
     }
 
@@ -200,7 +208,8 @@ class ClaudeService {
       intent,
       entities,
       conversationalReply,
-      confidence
+      confidence,
+      usage
     }
   }
 
@@ -217,7 +226,7 @@ class ClaudeService {
 
       const response = await callClaude( messages, systemPrompt )
 
-      const parsedIntent = this.parseClaudeResponse( response.content )
+      const parsedIntent = this.parseClaudeResponse( response.content, response.usage )
 
       return parsedIntent
 
