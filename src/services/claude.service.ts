@@ -9,7 +9,7 @@ type Intent = 'booking' | 'cancellation' | 'query' | 'general'
 
 type Confidence = 'high' | 'medium' | 'low'
 
-interface ParsedIntent {
+export interface ParsedIntent {
   intent: Intent
   entities: {
     teacher_id?: string
