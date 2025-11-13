@@ -5,7 +5,9 @@ import asyncWrapper from '../middleware/asyncWrapper.js'
 // Repositories
 import conversationRepository, { ConversationType, Message } from '../repositories/conversation.repository.js'
 // Services
+import claudeService from '../services/claude.service.js'
 import { sendWhatsappMessage } from '../config/twilio.js'
+import handleIntent from '../services/intent.service.js'
 
 // Helper function to extract phone number from twilio request body
 const extractPhoneNumber = ( phoneNumber: string ): string => phoneNumber.replace( 'whatsapp:+', '' )
@@ -46,13 +48,23 @@ const processMessageAsync = async ( from: string, body: string, messageSid: stri
       message_sid: messageSid
     } )
 
+    // Process message with Claude
+    const claudeResponse = await claudeService.processMessage( 
+      body, 
+      conversation.message_history, 
+      conversation.context 
+    )
+
+    console.log( claudeResponse )
+    await handleIntent( conversation, claudeResponse )
+
     // Send echo reply (for now - Claude integration in Week 2)
-    await sendWhatsappMessage( from, `Echo: ${ body }` )
+    await sendWhatsappMessage( from, claudeResponse.conversationalReply )
     
     // Store assistant reply in conversation
     await conversationRepository.appendMessage( conversation.id!, {
       role: 'assistant',
-      content: `Echo: ${ body }`,
+      content: claudeResponse.conversationalReply,
       timestamp: dayjs().toISOString(),
       message_sid: messageSid
     } )
