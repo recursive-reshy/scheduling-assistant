@@ -1,6 +1,7 @@
 // Repositories
-import conversationRepository from '../repositories/conversation.repository.js'
-import { ParsedIntent } from './claude.service.js'
+import conversationRepository, { Conversation, ConversationType } from '../repositories/conversation.repository.js'
+// Types
+import { Intent, ParsedIntent } from './claude.service.js'
 
 const handleBookingIntent = async (
   conversation: any,
@@ -42,7 +43,7 @@ const handleQueryIntent = async (
 }
 
 const handleIntent = async (
-  conversation: any,
+  conversation: any, // TODO: update type
   claudeResponse: ParsedIntent
 ): Promise< void > => {
 
@@ -71,4 +72,31 @@ const handleIntent = async (
   }
 }
 
+const updateConversationIntent = async ( conversation: any, intent: Intent ): Promise < Conversation > => {
+  
+  let updatedType: ConversationType
+
+  switch( intent ) {
+    case 'booking':
+      updatedType = ConversationType.BOOKING
+      break
+    case 'cancellation':
+      updatedType = ConversationType.CANCELLATION
+      break
+    case 'query':
+      updatedType = ConversationType.QUERY
+      break
+    default:
+      updatedType = ConversationType.GENERAL
+      break
+  }
+
+  return await conversationRepository.update( 
+    conversation.id, 
+    { conversation_type: updatedType } as Conversation 
+  )
+}
+
 export default handleIntent
+
+export { updateConversationIntent }
