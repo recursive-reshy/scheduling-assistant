@@ -6,8 +6,9 @@ import asyncWrapper from '../middleware/asyncWrapper.js'
 import conversationRepository, { ConversationType, Message } from '../repositories/conversation.repository.js'
 // Services
 import claudeService from '../services/claude.service.js'
+import handleIntent, { updateConversationIntent } from '../services/intent.service.js'
 import { sendWhatsappMessage } from '../config/twilio.js'
-import handleIntent from '../services/intent.service.js'
+import { updateTokenTracking } from '../utils/costMonitoring.js'
 
 // Helper function to extract phone number from twilio request body
 const extractPhoneNumber = ( phoneNumber: string ): string => phoneNumber.replace( 'whatsapp:+', '' )
@@ -54,8 +55,11 @@ const processMessageAsync = async ( from: string, body: string, messageSid: stri
       conversation.message_history, 
       conversation.context 
     )
-
-    console.log( claudeResponse )
+    
+    if( conversation.conversation_type == ConversationType.GENERAL && claudeResponse.intent != 'general' ) {
+      conversation = await updateConversationIntent( conversation, claudeResponse.intent )
+    }
+    
     await handleIntent( conversation, claudeResponse )
 
     // Send echo reply (for now - Claude integration in Week 2)
@@ -66,8 +70,11 @@ const processMessageAsync = async ( from: string, body: string, messageSid: stri
       role: 'assistant',
       content: claudeResponse.conversationalReply,
       timestamp: dayjs().toISOString(),
-      message_sid: messageSid
+      message_sid: messageSid,
+      claude_usage: claudeResponse.usage
     } )
+
+    await updateTokenTracking( conversation.id!, claudeResponse.usage )
 
   } catch (error) {
     console.error(`Error processing message from ${from}: ${JSON.stringify(error)}`)
