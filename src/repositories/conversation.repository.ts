@@ -34,6 +34,7 @@ export enum ConversationType {
   BOOKING = 'booking',
   CANCELLATION = 'cancellation',
   REMINDER = 'reminder',
+  QUERY = 'query',
   GENERAL = 'general'
 }
 
