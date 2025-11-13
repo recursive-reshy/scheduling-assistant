@@ -7,7 +7,7 @@ export type Role = 'user' | 'assistant' | 'system'
 export type ConversationStatus = 'active' | 'completed' | 'abandoned'
 
 export interface ConversationContext {
-  current_intent: string
+  current_intent?: string
   partial_booking?: {
     scheduled_time: string
     teacher_id: string
