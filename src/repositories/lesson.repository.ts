@@ -10,15 +10,15 @@ export enum LessonStatus {
 
 export interface Lesson {
   id: string
-  studentId: string
-  studentPhone: string
-  teacherId: string
-  teacherPhone: string
-  scheduledTime: string
+  student_id: string
+  student_phone: string
+  teacher_id: string
+  teacher_phone: string
+  scheduled_time: string
   status: LessonStatus
-  googleCalendarEventId: string | undefined
-  createdAt: string
-  updatedAt: string
+  google_calendar_event_id: string | undefined
+  created_at: string
+  updated_at: string
 }
 
 // TODO: Add logging
@@ -67,7 +67,7 @@ class LessonRepository extends BaseRepository< Lesson > {
   }
 
   async confirmLesson( lessonId: string, googleCalendarEventId?: string): Promise< Lesson > {
-    return this.update( lessonId, { status: LessonStatus.CONFIRMED, googleCalendarEventId } as Lesson )
+    return this.update( lessonId, { status: LessonStatus.CONFIRMED, google_calendar_event_id: googleCalendarEventId } as Lesson )
   }
 
   async cancelLesson( lessonId: string ): Promise< Lesson > {
