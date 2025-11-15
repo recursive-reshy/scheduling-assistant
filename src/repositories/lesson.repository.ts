@@ -9,7 +9,7 @@ export enum LessonStatus {
 }
 
 export interface Lesson {
-  id: string
+  id?: string
   student_id: string
   student_phone: string
   teacher_id: string
