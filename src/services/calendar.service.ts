@@ -1,11 +1,6 @@
 import dayjs from 'dayjs'
 import { google, calendar_v3 } from 'googleapis'
 
-interface TimePeriod {
-  start: string
-  end: string
-}
-
 interface CalendarEvent {
   id: string
   summary: string
@@ -14,7 +9,12 @@ interface CalendarEvent {
   description?: string
 }
 
-interface AvailabilityCheck {
+export interface TimePeriod {
+  start: string
+  end: string
+}
+
+export interface AvailabilityCheck {
   available: boolean
   conflicts?: TimePeriod[]
 }
@@ -216,16 +216,19 @@ class CalendarService {
       const startOfDay = dayjs( date ).startOf( 'day' ).toISOString()
       const endOfDay = dayjs( date ).endOf( 'day' ).toISOString()
 
-      const response = await this.calendar.events.list( {
-        calendarId,
-        timeMin: startOfDay,
-        timeMax: endOfDay,
-        timeZone: 'Asia/Singapore',
-        singleEvents: true,
-        orderBy: 'startTime'
+      const response = await this.calendar.freebusy.query( {
+        requestBody: {
+          timeMin: startOfDay,
+          timeMax: endOfDay,
+          timeZone: 'Asia/Singapore',
+          items: [ { id: calendarId } ]
+        }
       } )
 
-      const { data: { items = [] } } = response
+      const { data: { calendars = {} } } = response
+
+      const busy = calendars && calendars[ calendarId ]?.busy || []
+
       const freeSlots: Date[] = []
 
       let currentTime = dayjs( startOfDay )
@@ -234,17 +237,14 @@ class CalendarService {
         // TODO: Should probably use a constant for the lesson duration
         const slotEnd = dayjs( currentTime ).add( 45, 'minutes' ).toISOString()
 
-        const hasConflict = items.some( item => {
-          const eventStart = dayjs( item.start?.dateTime )
-          const eventEnd = dayjs( item.end?.dateTime )
-
+        const hasConflict = busy.some( ( { start, end } ) => {
           return (
             // Check if the current time is the same as the event start and before the event end
-            ( dayjs( currentTime ).isSame( eventStart ) && dayjs( currentTime ).isBefore( eventEnd ) ) ||
+            ( dayjs( currentTime ).isSame( start ) && dayjs( currentTime ).isBefore( end ) ) ||
             // Check if the current time is after the event start and before the event end
-            ( dayjs( slotEnd ).isAfter( eventStart ) && dayjs( slotEnd ).isBefore( eventEnd ) ) ||
+            ( dayjs( slotEnd ).isAfter( start ) && dayjs( slotEnd ).isBefore( end ) ) ||
             // Check if the current time is the same as the event start and after the event end
-            ( dayjs( currentTime ).isSame( eventStart ) && dayjs( slotEnd ).isAfter( eventEnd ) )
+            ( dayjs( currentTime ).isSame( start ) && dayjs( slotEnd ).isAfter( end ) )
           )
         } )
 
