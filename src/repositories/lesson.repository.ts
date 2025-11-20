@@ -16,7 +16,7 @@ export interface Lesson {
   teacher_phone: string
   scheduled_time: string
   status: LessonStatus
-  google_calendar_event_id: string | undefined
+  google_calendar_event_id?: string
   created_at: string
   updated_at: string
 }
