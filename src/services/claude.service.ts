@@ -75,17 +75,6 @@ class ClaudeService {
 
       Current conversation: ${ JSON.stringify( context, null, 2 ) }
     `
-
-    if( current_intent == 'booking' && suggested_alternatives ) {
-      prompt += ` 
-        \n\n**IMPORTANT - BOOKING CONFLICT:**
-        The user's requested time is NOT available. Here are alternative times:
-        ${suggested_alternatives.map( ( { start }, index ) => 
-          `${ index + 1 }. ${ dayjs( start ).format( 'DD-MM-YYYY HH:mm' ) }`
-        ).join( '\n' ) }
-        Suggest these alternatives naturally in your response.
-      `
-    }
     
     return prompt
   }
@@ -184,8 +173,10 @@ class ClaudeService {
       
       const systemPrompt = this.buildSystemPrompt( userPhone, context )
 
+      // Format message to be parsed as context for Claude
       const messages = this.formatMessagesForClaude( conversationHistory, userMessage )
 
+      // Process user message and get response from Claude
       const response = await callClaude( messages, systemPrompt )
 
       const parsedIntent = this.parseClaudeResponse( response.content, response.usage )
