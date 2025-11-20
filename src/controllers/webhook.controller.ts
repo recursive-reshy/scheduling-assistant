@@ -50,7 +50,8 @@ const processMessageAsync = async ( from: string, body: string, messageSid: stri
     } )
 
     // Process message with Claude
-    const claudeResponse = await claudeService.processMessage( 
+    const claudeResponse = await claudeService.processMessage(
+      phoneNumber,
       body, 
       conversation.message_history, 
       conversation.context 
@@ -60,9 +61,9 @@ const processMessageAsync = async ( from: string, body: string, messageSid: stri
       conversation = await updateConversationIntent( conversation, claudeResponse.intent )
     }
     
+    // Update convestion context with intent
     await handleIntent( conversation, claudeResponse )
 
-    // Send echo reply (for now - Claude integration in Week 2)
     await sendWhatsappMessage( from, claudeResponse.conversationalReply )
     
     // Store assistant reply in conversation
