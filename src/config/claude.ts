@@ -10,7 +10,7 @@ interface ClaudeResponse {
   }
 }
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
+const anthropic = new Anthropic( { apiKey: process.env.ANTHROPIC_API_KEY! } )
 
 // TODO: Add logging
 const callClaude = async ( 
