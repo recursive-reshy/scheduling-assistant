@@ -24,12 +24,19 @@ const callClaude = async (
   try {
     const { max_tokens = 1024, temperature = 0.7 } = options || {}
 
-    const response = await anthropic.messages.create( {
+    const response = await anthropic.beta.messages.create( {
       model: 'claude-3-5-haiku-latest',
       messages,
       system,
       max_tokens,
       temperature,
+      betas: ["mcp-client-2025-04-04"],
+      mcp_servers: [
+        { name: 'mcp-gcal-server',
+          type: 'url',
+          url: process.env.MCP_CALENDAR_URL!
+        }
+      ]
     } )
 
     const content = response.content.find( ( { type } ) => type == 'text' )
