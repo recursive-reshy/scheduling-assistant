@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 // Types
-import { MessageParam } from '@anthropic-ai/sdk/resources.js'
+import { MessageCreateParamsNonStreaming, MessageParam } from '@anthropic-ai/sdk/resources.js'
+import { BetaTextBlock } from '@anthropic-ai/sdk/resources/beta.mjs'
 
 export interface ClaudeResponse {
   reply: string
@@ -12,9 +13,7 @@ export interface ClaudeResponse {
 }
 
 export interface ToolCall {
-  name: string
-  input: Record< string, string >
-  serverName: string
+  content: BetaTextBlock[]
 }
 
 const anthropic = new Anthropic( { apiKey: process.env.ANTHROPIC_API_KEY! } )
@@ -31,7 +30,7 @@ const callClaude = async (
   try {
     const { max_tokens = 1024, temperature = 0.7 } = options || {}
 
-    const response = await anthropic.beta.messages.create( {
+    const CREATE_MESSAGE_OPTIONS = {
       model: 'claude-3-5-haiku-latest',
       messages,
       system,
@@ -44,7 +43,33 @@ const callClaude = async (
           url: process.env.MCP_CALENDAR_URL!
         }
       ]
-    } )
+    } as MessageCreateParamsNonStreaming
+
+    let response = await anthropic.beta.messages.create( CREATE_MESSAGE_OPTIONS )
+
+    // Handle MCP tool execution loop
+    while( response.stop_reason = 'tool_use' ) {
+
+      const toolResults = response.content
+        .map( tool => {
+          if( tool.type != 'mcp_tool_result' ) return null
+
+          const { content } = tool
+
+          if( !Array.isArray( content ) ) return { role: 'assistant', content }
+
+          const textBlocks = content
+            .filter( ( block ) => block.type == 'text' )
+            .map( ( block ) => block.text )
+
+          return { role: 'assistant', content: textBlocks.join( '\n' ) }
+        } )
+        .filter(Boolean) as MessageParam[]
+
+      messages.push( ...toolResults )
+
+      response = await anthropic.beta.messages.create( { ...CREATE_MESSAGE_OPTIONS, messages } )
+    }
 
     // Extract claude response
     const content = response.content.find( ( { type } ) => type == 'text' )
@@ -56,15 +81,11 @@ const callClaude = async (
     // Extract tool calls if any
     const toolCalls = response.content
       .map( ( tool ) => {
-        if( tool.type != 'mcp_tool_use' ) return null
+        if( tool.type != 'mcp_tool_result' ) return null
 
-        const { name, input, server_name } = tool
+        const { content } = tool
 
-        return { 
-          name, 
-          input,
-          serverName: server_name // To track tool calls from specific servers
-        }
+        return { content }
       } )
       .filter(Boolean) as ToolCall[]
 
