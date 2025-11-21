@@ -1,10 +1,12 @@
 import dayjs from 'dayjs'
 // Claude
-import { callClaude } from '../config/claude.js'
+import { callClaude, ToolCall } from '../config/claude.js'
 // Types
 import { ConversationContext, Message } from '../repositories/conversation.repository.js'
 import { MessageParam } from '@anthropic-ai/sdk/resources'
+import { ClaudeResponse } from '../config/claude.js'
 
+// TODO: Remove when remove intent service
 type Confidence = 'high' | 'medium' | 'low'
 
 export type Intent = 'booking' | 'cancellation' | 'query' | 'general'
@@ -22,6 +24,12 @@ export interface ParsedIntent {
     input_tokens: number
     output_tokens: number
   }
+}
+
+export interface BookingIntent {
+  hasBookingIntent: boolean
+  scheduledTime?: string
+  calendarId?: string
 }
 
 class ClaudeService {
@@ -97,78 +105,12 @@ class ClaudeService {
     return messages
   }
 
-  private parseClaudeResponse( response: string, usage: { input_tokens: number, output_tokens: number } ): ParsedIntent {
-
-    console.log( { response } )
-    
-    // Split response into conversational part and intent block
-    const parts = response.split( '---INTENT---' )
-
-    if( parts.length < 2 ) {
-      return {
-        intent: 'general',
-        entities: {},
-        conversationalReply: response,
-        confidence: 'low',
-        usage: {
-          input_tokens: 0,
-          output_tokens: 0
-        }
-      }
-    }
-
-    const conversationalReply = parts[ 0 ].trim()
-    const intentBlock = parts[1].split( '---END---' )[ 0 ].trim()
-
-    // Parse intent block
-    // TODO: Check this throughly. Need to think a bit more on the flow here
-    const intentMatch = intentBlock.match( /INTENT:\s*(\w+)/ )
-    const confidenceMatch = intentBlock.match( /CONFIDENCE:\s*(\w+)/ )
-    const teacherMatch = intentBlock.match( /TEACHER:\s*(.+)/ )
-    const datetimeMatch = intentBlock.match( /DATETIME:\s*(.+)/ )
-    const durationMatch = intentBlock.match( /DURATION:\s*(\d+)/ )
-
-    const intent = ( intentMatch?.[ 1 ] || 'general' ) as ParsedIntent[ 'intent' ]
-    const confidence = ( confidenceMatch?.[ 1 ] || 'medium' ) as ParsedIntent[ 'confidence' ]
-
-    const entities: ParsedIntent[ 'entities' ] = {}
-
-    if ( teacherMatch && teacherMatch[ 1 ] != 'NONE' ) {
-      entities.teacher_id = teacherMatch[ 1 ].trim()
-    }
-
-    if ( datetimeMatch && datetimeMatch[ 1 ] != 'NONE' ) {
-      try {
-        // Validate and normalize datetime
-        const datetime = new Date( datetimeMatch[ 1 ].trim() )
-
-        if ( !isNaN( datetime.getTime() ) ) {
-          entities.scheduled_time = datetime.toISOString()
-        }
-      } catch ( error ) {
-        console.error( `Failed to parse datetime: ${ error }` )
-      }
-    }
-
-    if ( durationMatch ) {
-      entities.duration = parseInt( durationMatch[ 1 ] )
-    }
-
-    return {
-      intent,
-      entities,
-      conversationalReply,
-      confidence,
-      usage
-    }
-  }
-
   async processMessage(
     userPhone: string,
     userMessage: string,
     conversationHistory: Message[],
     context: ConversationContext
-  ): Promise< ParsedIntent > {
+  ): Promise< ClaudeResponse > {
     try {
       
       const systemPrompt = this.buildSystemPrompt( userPhone, context )
@@ -179,14 +121,33 @@ class ClaudeService {
       // Process user message and get response from Claude
       const response = await callClaude( messages, systemPrompt )
 
-      const parsedIntent = this.parseClaudeResponse( response.content, response.usage )
-
-      return parsedIntent
+      return response
 
     } catch (error) {
       console.error(`Error processing message: ${ error }`)
       throw error
     }
+  }
+
+  detectBookingIntent( 
+    context: ConversationContext,
+    toolCalls: ToolCall[],
+  ): BookingIntent {
+
+    const checkAvailability = toolCalls.find( ( { name } ) => name == 'checkAvailability' )
+
+    const partialBooking = context.partial_booking
+
+    if( checkAvailability && partialBooking?.scheduled_time ) {
+      return {
+        hasBookingIntent: true,
+        scheduledTime: partialBooking.scheduled_time,
+        calendarId: partialBooking.teacher_id
+      }
+    }
+
+    return { hasBookingIntent: false }
+
   }
 }
 
