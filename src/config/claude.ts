@@ -2,12 +2,19 @@ import Anthropic from '@anthropic-ai/sdk'
 // Types
 import { MessageParam } from '@anthropic-ai/sdk/resources.js'
 
-interface ClaudeResponse {
-  content: string
+export interface ClaudeResponse {
+  reply: string
+  toolCalls: ToolCall[]
   usage: {
     input_tokens: number
     output_tokens: number
   }
+}
+
+export interface ToolCall {
+  name: string
+  input: Record< string, string >
+  serverName: string
 }
 
 const anthropic = new Anthropic( { apiKey: process.env.ANTHROPIC_API_KEY! } )
@@ -39,13 +46,33 @@ const callClaude = async (
       ]
     } )
 
+    // Extract claude response
     const content = response.content.find( ( { type } ) => type == 'text' )
 
     if( !content || content.type != 'text' ) {
       throw new Error( 'No text content in Claude response' )
     }
 
-    return { content: content.text, usage: response.usage }
+    // Extract tool calls if any
+    const toolCalls = response.content
+      .map( ( tool ) => {
+        if( tool.type != 'mcp_tool_use' ) return null
+
+        const { name, input, server_name } = tool
+
+        return { 
+          name, 
+          input,
+          serverName: server_name // To track tool calls from specific servers
+        }
+      } )
+      .filter(Boolean) as ToolCall[]
+
+    return { 
+      reply: content.text, 
+      toolCalls: toolCalls || [], 
+      usage: response.usage 
+    }
     
   } catch ( error ) {
     console.error(`Error calling Claude: ${ error }`)
