@@ -36,7 +36,7 @@ const callClaude = async (
       system,
       max_tokens,
       temperature,
-      betas: ["mcp-client-2025-04-04"],
+      betas: [ 'mcp-client-2025-04-04' ],
       mcp_servers: [
         { name: 'mcp-gcal-server',
           type: 'url',
