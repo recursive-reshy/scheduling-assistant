@@ -5,15 +5,25 @@ import { BetaTextBlock } from '@anthropic-ai/sdk/resources/beta.mjs'
 
 export interface ClaudeResponse {
   reply: string
-  toolCalls: ToolCall[]
+  toolUses: ToolUse[]
+  toolResults: ToolResult[]
   usage: {
     input_tokens: number
     output_tokens: number
   }
 }
 
-export interface ToolCall {
+export interface ToolUse {
+  id: string
+  name: string // TODO: Add enum for tool names
+  input: Record< string, any >
+  serverName: string
+}
+
+export interface ToolResult {
+  toolUseId: string
   content: BetaTextBlock[]
+  isError: boolean
 }
 
 const anthropic = new Anthropic( { apiKey: process.env.ANTHROPIC_API_KEY! } )
@@ -48,7 +58,7 @@ const callClaude = async (
     let response = await anthropic.beta.messages.create( CREATE_MESSAGE_OPTIONS )
 
     // Handle MCP tool execution loop
-    while( response.stop_reason = 'tool_use' ) {
+    while( response.stop_reason == 'tool_use' ) {
 
       const toolResults = response.content
         .map( tool => {
@@ -79,19 +89,42 @@ const callClaude = async (
     }
 
     // Extract tool calls if any
-    const toolCalls = response.content
+    const toolResults = response.content
       .map( ( tool ) => {
         if( tool.type != 'mcp_tool_result' ) return null
 
-        const { content } = tool
+        const { tool_use_id, is_error, content } = tool
 
-        return { content }
+        return { 
+          toolUseId: tool_use_id,
+          isError: is_error,
+          content
+        }
       } )
-      .filter(Boolean) as ToolCall[]
+      .filter(Boolean) as ToolResult[]
+
+    const toolUses = response.content
+      .map( ( tool ) => { 
+        if( tool.type != 'mcp_tool_use' ) return null
+
+        const { id, name, input, server_name } = tool
+
+        return {
+          id,
+          name,
+          input,
+          serverName: server_name
+        }
+      } )
+      .filter(Boolean) as ToolUse[]
+
+    // TODO: Remove this after testing
+    console.log( { toolUses, toolResults } )
 
     return { 
       reply: content.text, 
-      toolCalls: toolCalls || [], 
+      toolUses: toolUses || [],
+      toolResults: toolResults || [], 
       usage: response.usage 
     }
     
