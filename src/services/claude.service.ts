@@ -1,10 +1,9 @@
 import dayjs from 'dayjs'
 // Claude
-import { callClaude, ToolCall } from '../config/claude.js'
+import { callClaude, ClaudeResponse } from '../config/claude.js'
 // Types
 import { ConversationContext, Message } from '../repositories/conversation.repository.js'
 import { MessageParam } from '@anthropic-ai/sdk/resources'
-import { ClaudeResponse } from '../config/claude.js'
 
 // TODO: Remove when remove intent service
 type Confidence = 'high' | 'medium' | 'low'
@@ -131,23 +130,34 @@ class ClaudeService {
 
   detectBookingIntent( 
     context: ConversationContext,
-    toolCalls: ToolCall[],
+    response: ClaudeResponse
   ): BookingIntent {
-
-    const checkAvailability = toolCalls.find( ( { name } ) => name == 'checkAvailability' )
 
     const partialBooking = context.partial_booking
 
-    if( checkAvailability && partialBooking?.scheduled_time ) {
-      return {
-        hasBookingIntent: true,
-        scheduledTime: partialBooking.scheduled_time,
-        calendarId: partialBooking.teacher_id
-      }
+    if( !partialBooking?.scheduled_time ) {
+      return { hasBookingIntent: false }
     }
 
-    return { hasBookingIntent: false }
+    const checkAvailability = response.toolUses.find( ( { name } ) => name == 'checkAvailability' )
 
+    if( !checkAvailability ) {
+      return { hasBookingIntent: false }
+    }
+
+    const toolResult = response.toolResults.find( ( { toolUseId } ) => toolUseId == checkAvailability.id )
+
+    if( !toolResult || toolResult.isError ) {
+      return { hasBookingIntent: false }
+    }
+
+    const isAvailable = !toolResult.content.some( ( { type, text } ) => type == 'text' && text.toLowerCase().includes( 'conflict' ) )
+
+    return {
+      hasBookingIntent: isAvailable,
+      scheduledTime: partialBooking.scheduled_time,
+      calendarId: partialBooking.teacher_id
+    }
   }
 }
 
