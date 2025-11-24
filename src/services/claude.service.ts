@@ -5,26 +5,6 @@ import { callClaude, ClaudeResponse } from '../config/claude.js'
 import { ConversationContext, Message } from '../repositories/conversation.repository.js'
 import { MessageParam } from '@anthropic-ai/sdk/resources'
 
-// TODO: Remove when remove intent service
-type Confidence = 'high' | 'medium' | 'low'
-
-export type Intent = 'booking' | 'cancellation' | 'query' | 'general'
-
-export interface ParsedIntent {
-  intent: Intent
-  entities: {
-    teacher_id?: string
-    scheduled_time?: string
-    duration?: number
-  }
-  conversationalReply: string
-  confidence: Confidence
-  usage: {
-    input_tokens: number
-    output_tokens: number
-  }
-}
-
 export interface BookingIntent {
   hasBookingIntent: boolean
   scheduledTime?: string
